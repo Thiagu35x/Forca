@@ -1,36 +1,73 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+import { useState, useEffect } from "react";
+import HangmanDrawing from "../components/HangmanDrawing";
+import Keyboard from "../components/Keyboard";
+import WordDisplay from "../components/WordDisplay";
+import styles from "../styles/Hangman.module.css";
 
-## Getting Started
+const WORDS = [
+  "REACT", "JAVASCRIPT", "NODE", "NEXT", "CSS", "HTML", "PROGRAMAR",
+  "ALGORITMO", "DESENVOLVEDOR", "COMPONENTE", "ESTADO", "FUNCAO",
+  "OBJETO", "ARRAY", "STRING", "BOOLEAN", "NUMERO", "TIPO", "HOOK",
+  "PROPS", "ROUTER", "SERVIDOR", "CLIENTE", "BANCO", "DADOS", "API",
+  "ASYNC", "AWAIT", "PROMISE", "EVENTO", "DOM"
+];
 
-First, run the development server:
+export default function Home() {
+  const [word, setWord] = useState("");
+  const [guessedLetters, setGuessedLetters] = useState([]);
+  const [wrongLetters, setWrongLetters] = useState([]);
+  const [attemptsLeft, setAttemptsLeft] = useState(6);
+  const [gameStatus, setGameStatus] = useState("playing"); // playing, won, lost
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+  useEffect(() => {
+    startNewGame();
+  }, []);
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+  const startNewGame = () => {
+    const randomWord = WORDS[Math.floor(Math.random() * WORDS.length)];
+    setWord(randomWord);
+    setGuessedLetters([]);
+    setWrongLetters([]);
+    setAttemptsLeft(6);
+    setGameStatus("playing");
+  };
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+  const handleGuess = (letter) => {
+    if (gameStatus !== "playing") return;
+    const upperLetter = letter.toUpperCase();
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+    if (guessedLetters.includes(upperLetter) || wrongLetters.includes(upperLetter)) return;
 
-## Learn More
+    if (word.includes(upperLetter)) {
+      setGuessedLetters([...guessedLetters, upperLetter]);
+      // Checa vitória
+      const allGuessed = word.split("").every((l) => [...guessedLetters, upperLetter].includes(l));
+      if (allGuessed) setGameStatus("won");
+    } else {
+      setWrongLetters([...wrongLetters, upperLetter]);
+      setAttemptsLeft(attemptsLeft - 1);
+      if (attemptsLeft - 1 === 0) setGameStatus("lost");
+    }
+  };
 
-To learn more about Next.js, take a look at the following resources:
+  return (
+    <div className={styles.container}>
+      <h1>Jogo da Forca</h1>
+      <HangmanDrawing wrongLetters={wrongLetters} />
+      <WordDisplay word={word} guessedLetters={guessedLetters} />
+      <Keyboard onGuess={handleGuess} guessedLetters={[...guessedLetters, ...wrongLetters]} />
+      
+      <div className={styles.status}>
+        {gameStatus === "won" && <p className={styles.won}>Parabéns! Você acertou: {word}</p>}
+        {gameStatus === "lost" && <p className={styles.lost}>Game Over! A palavra era: {word}</p>}
+      </div>
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+      <button className={styles.restartButton} onClick={startNewGame}>
+        Reiniciar Jogo
+      </button>
+    </div>
+  );
+}
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## Deploy on Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
